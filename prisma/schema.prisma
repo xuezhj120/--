@@ -1,0 +1,208 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String         @id @default(cuid())
+  phone         String         @unique
+  nickname      String
+  avatar        String?
+  isAdmin       Boolean        @default(false)
+  isBanned      Boolean        @default(false)
+  supabaseUid   String?        @unique
+  lastActiveAt  DateTime?
+  createdAt     DateTime       @default(now())
+  favorites     Favorite[]
+  recvMsgs      Message[]      @relation("ReceivedMessages")
+  sentMsgs      Message[]      @relation("SentMessages")
+  sellOrders    Order[]        @relation("SellerOrders")
+  buyOrders     Order[]        @relation("BuyerOrders")
+  products      Product[]      @relation("UserProducts")
+  authored      Review[]       @relation("AuthoredReviews")
+  reviews       Review[]       @relation("ReceivedReviews")
+  forumPosts    ForumPost[]
+  forumComments ForumComment[]
+  announcements Announcement[]
+}
+
+model Category {
+  id       String    @id @default(cuid())
+  name     String    @unique
+  icon     String
+  sort     Int       @default(0)
+  products Product[]
+}
+
+model Product {
+  id          String     @id @default(cuid())
+  title       String
+  description String
+  price       Float
+  images      String
+  condition   String
+  status      String     @default("ON_SALE")
+  views       Int        @default(0)
+  createdAt   DateTime   @default(now())
+  sellerId    String
+  categoryId  String
+  favorites   Favorite[]
+  orders      Order[]
+  category    Category   @relation(fields: [categoryId], references: [id])
+  seller      User       @relation("UserProducts", fields: [sellerId], references: [id])
+
+  @@index([status, createdAt])
+  @@index([categoryId])
+}
+
+model Order {
+  id          String    @id @default(cuid())
+  amount      Float
+  status      String    @default("PENDING_SELLER_CONFIRM")
+  createdAt   DateTime  @default(now())
+  confirmedAt DateTime?
+  completedAt DateTime?
+  cancelledAt DateTime?
+  buyerId     String
+  sellerId    String
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id])
+  seller      User      @relation("SellerOrders", fields: [sellerId], references: [id])
+  buyer       User      @relation("BuyerOrders", fields: [buyerId], references: [id])
+  review      Review?
+
+  @@index([buyerId, status])
+  @@index([sellerId, status])
+}
+
+model Message {
+  id         String   @id @default(cuid())
+  content    String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+  senderId   String
+  receiverId String
+  receiver   User     @relation("ReceivedMessages", fields: [receiverId], references: [id])
+  sender     User     @relation("SentMessages", fields: [senderId], references: [id])
+
+  @@index([senderId, receiverId, createdAt])
+  @@index([receiverId, isRead])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  userId    String
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([userId, productId])
+}
+
+model Review {
+  id        String   @id @default(cuid())
+  rating    Int
+  content   String
+  createdAt DateTime @default(now())
+  orderId   String   @unique
+  sellerId  String
+  authorId  String
+  author    User     @relation("AuthoredReviews", fields: [authorId], references: [id])
+  seller    User     @relation("ReceivedReviews", fields: [sellerId], references: [id])
+  order     Order    @relation(fields: [orderId], references: [id])
+
+  @@index([sellerId])
+}
+
+// ==================== 首页公告 ====================
+
+/// 公告/广告类型
+enum AnnouncementType {
+  AD // 广告展览
+  NOTICE // 事情通知
+}
+
+model Announcement {
+  id          String           @id @default(cuid())
+  title       String
+  content     String
+  image       String?
+  link        String?
+  type        AnnouncementType @default(NOTICE)
+  status      String           @default("PUBLISHED") // DRAFT / PUBLISHED / ARCHIVED
+  pinned      Boolean          @default(false)
+  sort        Int              @default(0)
+  publishedAt DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  authorId    String?
+  author      User?            @relation(fields: [authorId], references: [id])
+
+  @@index([type, status, pinned, sort, publishedAt])
+}
+
+// ==================== 校园论坛 ====================
+
+/// 论坛版块枚举
+enum ForumSection {
+  STUDY // 学习交流
+  QA // 校园问答
+  LIFE // 生活闲聊
+  NOTIFY // 活动通知
+  HELP // 求助墙
+}
+
+model ForumPost {
+  id        String         @id @default(cuid())
+  title     String
+  content   String
+  images    String         @default("[]") // JSON 字符串数组
+  section   ForumSection
+  views     Int            @default(0)
+  likes     Int            @default(0)
+  status    String         @default("VISIBLE") // VISIBLE / DELETED
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  authorId  String
+  author    User           @relation(fields: [authorId], references: [id])
+  comments  ForumComment[]
+
+  @@index([section, createdAt])
+  @@index([authorId])
+  @@index([likes])
+}
+
+model ForumComment {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  postId    String
+  parentId  String? // null = 楼层评论，else 回复楼层
+  authorId  String
+  status    String   @default("VISIBLE") // VISIBLE / DELETED
+
+  post    ForumPost      @relation(fields: [postId], references: [id])
+  parent  ForumComment?  @relation("CommentTree", fields: [parentId], references: [id])
+  replies ForumComment[] @relation("CommentTree")
+  author  User           @relation(fields: [authorId], references: [id])
+
+  @@index([postId, createdAt])
+  @@index([parentId])
+  @@index([authorId])
+}
+
+// 论坛点赞记录（用于防重复）
+model ForumLike {
+  id        String   @id @default(cuid())
+  userId    String
+  postId    String
+  createdAt DateTime @default(now())
+
+  @@unique([userId, postId], name: "forumLike_user_post_unique")
+  @@index([postId])
+}

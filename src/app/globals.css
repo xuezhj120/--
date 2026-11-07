@@ -1,26 +1,283 @@
 @import "tailwindcss";
 
+/* ==================== 昭院闲集 · 黑金主题 ==================== */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* 底色 */
+  --bg: #0b0b0d;
+  --card: #16161c;
+  --card-hover: #1d1d24;
+  --elev: #101014;
+
+  /* 金 */
+  --gold: #c8a24a;
+  --gold-bright: #e6c877;
+  --gold-deep: #8a6d2f;
+  --gold-line: rgba(200, 162, 74, 0.16);
+  --gold-line-strong: rgba(200, 162, 74, 0.38);
+  --gold-glow: rgba(200, 162, 74, 0.18);
+
+  /* 文字 */
+  --fg: #ece9e4;
+  --fg-sub: #9a948a;
+  --fg-faint: #6d6860;
+
+  /* 圆角 / 阴影 */
+  --radius-lg: 12px;
+  --radius-md: 8px;
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.6);
+  --shadow-gold: 0 0 18px rgba(200, 162, 74, 0.18);
+
+  /* 兼容旧变量名（其他页面仍在引用） */
+  --primary: var(--gold);
+  --primary-dark: var(--gold-deep);
+  --primary-deep: var(--gold-deep);
+  --accent: var(--gold-bright);
+  --background: var(--bg);
+  --foreground: var(--fg);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
+  --color-background: var(--bg);
+  --color-foreground: var(--fg);
+  --color-primary: var(--gold);
+  --color-primary-dark: var(--gold-deep);
+  --color-primary-deep: var(--gold-deep);
+  --color-accent: var(--gold-bright);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  background: var(--bg);
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--fg);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* 页面底纹：极淡的金色双光斑，给纯黑一点纵深 */
+.app-bg::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(60% 40% at 15% 0%, rgba(200, 162, 74, 0.07), transparent 70%),
+    radial-gradient(50% 35% at 90% 8%, rgba(200, 162, 74, 0.05), transparent 70%);
+}
+
+/* ==================== 通用工具 ==================== */
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.line-clamp-1 {
+  display: -webkit-box;
+  -webkit-line-clamp: 1;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.line-clamp-3 {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 金渐变文字 */
+.text-gold {
+  background: linear-gradient(135deg, var(--gold-bright) 0%, var(--gold) 55%, var(--gold-deep) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* 金色细线（分隔/卡片描边） */
+.gold-line {
+  border: 1px solid var(--gold-line);
+}
+.gold-hairline {
+  border-color: var(--gold-line);
+}
+
+/* 卡片：黑底 + 极细金边 + hover 金晕 */
+.surface {
+  background: var(--card);
+  border: 1px solid var(--gold-line);
+  border-radius: var(--radius-lg);
+  transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease, transform 0.25s ease;
+}
+.surface-hover:hover {
+  background: var(--card-hover);
+  border-color: var(--gold-line-strong);
+  box-shadow: var(--shadow-gold);
+}
+
+/* 主按钮：金底黑字 */
+.btn-gold {
+  background: linear-gradient(135deg, var(--gold-bright), var(--gold) 60%, var(--gold-deep));
+  color: #0b0b0d;
+  font-weight: 600;
+  transition: filter 0.2s ease, box-shadow 0.25s ease, transform 0.2s ease;
+}
+.btn-gold:hover {
+  filter: brightness(1.08);
+  box-shadow: 0 0 20px rgba(200, 162, 74, 0.35);
+}
+.btn-gold:active {
+  transform: translateY(1px);
+}
+
+/* 次按钮：透明底 + 金边金字 */
+.btn-ghost-gold {
+  background: transparent;
+  color: var(--gold);
+  border: 1px solid var(--gold-line-strong);
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+}
+.btn-ghost-gold:hover {
+  background: rgba(200, 162, 74, 0.1);
+  border-color: var(--gold);
+  color: var(--gold-bright);
+}
+
+/* 输入框 */
+.input-gold {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid var(--gold-line);
+  color: var(--fg);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+.input-gold::placeholder {
+  color: var(--fg-faint);
+}
+.input-gold:focus {
+  outline: none;
+  border-color: var(--gold-line-strong);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 0 0 3px rgba(200, 162, 74, 0.1);
+}
+
+/* 焦点环 */
+.focus-gold:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+/* ==================== 卡片内图片交互 ==================== */
+.card-img {
+  transition: opacity 0.35s ease, transform 0.35s ease;
+}
+.group:hover .card-img {
+  opacity: 0.5;
+  transform: scale(1.03);
+}
+.card-tip {
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.55), rgba(0, 0, 0, 0.92));
+}
+.group:hover .card-tip {
+  opacity: 1;
+}
+
+/* ==================== 动画 ==================== */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes riseIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-rise {
+  animation: riseIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* 开屏：金属扫光 */
+@keyframes goldSheen {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+.sheen {
+  background-image: linear-gradient(
+    100deg,
+    var(--gold-deep) 0%,
+    var(--gold) 35%,
+    #fff6dc 50%,
+    var(--gold) 65%,
+    var(--gold-deep) 100%
+  );
+  background-size: 200% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: goldSheen 2.4s ease-in-out infinite;
+}
+
+/* 开屏：金线展开 */
+@keyframes lineGrow {
+  from {
+    transform: scaleX(0);
+    opacity: 0;
+  }
+  to {
+    transform: scaleX(1);
+    opacity: 1;
+  }
+}
+
+/* 开屏：淡出 */
+@keyframes splashOut {
+  to {
+    opacity: 0;
+    visibility: hidden;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sheen,
+  .animate-rise,
+  .animate-fadeIn {
+    animation: none !important;
+  }
 }
